@@ -28,6 +28,11 @@ def parse_subnet4(s):
     return(socket.AF_INET, '%d.%d.%d.%d' % (a, b, c, d), width)
 
 
+def parse_ipset(s):
+    m = re.match(r'^set:(.*)', s)
+    return(socket.AF_INET, m.groups()[0], -1)
+
+
 # 1:2::3/64 or just 1:2::3
 def parse_subnet6(s):
     m = re.match(r'(?:([a-fA-F\d:]+))?(?:/(\d+))?$', s)
@@ -69,7 +74,9 @@ def parse_subnet_file(s):
 def parse_subnets(subnets_str):
     subnets = []
     for s in subnets_str:
-        if ':' in s:
+        if 'set:' in s:
+            subnet = parse_ipset(s)
+        elif ':' in s:
             subnet = parse_subnet6(s)
         else:
             subnet = parse_subnet4(s)

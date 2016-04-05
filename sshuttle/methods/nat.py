@@ -45,15 +45,20 @@ class Method(BaseMethod):
         # such a non- intuitive order.
         for f, swidth, sexclude, snet \
                 in sorted(subnets, key=lambda s: s[1], reverse=True):
-            if sexclude:
-                _ipt('-A', chain, '-j', 'RETURN',
-                     '--dest', '%s/%s' % (snet, swidth),
-                     '-p', 'tcp')
+            if swidth == -1:
+                dest_args = ('--match', 'set', '--match-set', snet, 'dst')
             else:
-                _ipt_ttl('-A', chain, '-j', 'REDIRECT',
-                         '--dest', '%s/%s' % (snet, swidth),
-                         '-p', 'tcp',
-                         '--to-ports', str(port))
+                dest_args = ('--dest', '%s/%s' % (snet, swidth))
+
+            if sexclude:
+                _ipt(*(('-A', chain, '-j', 'RETURN',) +
+                       dest_args +
+                       ('-p', 'tcp')))
+            else:
+                _ipt_ttl(*(('-A', chain, '-j', 'REDIRECT') +
+                           dest_args +
+                           ('-p', 'tcp',
+                            '--to-ports', str(port))))
 
         for f, ip in [i for i in nslist if i[0] == family]:
             _ipt_ttl('-A', chain, '-j', 'REDIRECT',
